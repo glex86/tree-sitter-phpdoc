@@ -1,0 +1,521 @@
+================================
+PHPStan types: Parenthesized types and arrays of them
+================================
+/**
+ * @param (A|B)[] $x
+ * @param ?(A|B) $x
+ * @param (A&B)|null $x
+ * @param (callable(int): void)|null $x
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (array_type
+      (parenthesized_type
+        (union_type
+          (named_type
+            (name))
+          (named_type
+            (name)))))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (optional_type
+      (parenthesized_type
+        (union_type
+          (named_type
+            (name))
+          (named_type
+            (name)))))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (disjunctive_normal_form_type
+      (intersection_type
+        (named_type
+          (name))
+        (named_type
+          (name)))
+      (primitive_type))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (union_type
+      (parenthesized_type
+        (callable_type
+          (named_type
+            (name))
+          (callable_parameter
+            (primitive_type))
+          (primitive_type)))
+      (primitive_type))
+    (variable_name
+      (name))))
+
+================================
+PHPStan types: Generic arguments w/ unions
+================================
+/**
+ * @return Foo<A|B>
+ * @return array<int|string, X>
+ * @return \Iterator<array-key, Attr>
+ * @param Foo<covariant T, *> $x
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (array_type
+      (named_type
+        (name))
+      (union_type
+        (named_type
+          (name))
+        (named_type
+          (name)))))
+  (tag
+    (tag_name)
+    (array_type
+      (primitive_type)
+      (union_type
+        (primitive_type)
+        (primitive_type))
+      (named_type
+        (name))))
+  (tag
+    (tag_name)
+    (array_type
+      (named_type
+        (qualified_name
+          (name)))
+      (primitive_type)
+      (named_type
+        (name))))
+  (tag
+    (tag_name)
+    (named_type
+      (generic_type
+        (name)
+        (named_type
+          (name))))
+    (variable_name
+      (name))))
+
+================================
+PHPStan types: Dashed types w/ arguments
+================================
+/**
+ * @param non-empty-array<int> $x
+ * @param key-of<Foo::MAP> $x
+ * @param value-of<Foo::MAP> $x
+ * @param int-mask<1, 2, 4> $x
+ * @param int-mask-of<Foo::FLAG_*> $x
+ * @param array-key $x
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (primitive_type
+      (primitive_type))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (primitive_type
+      (class_constant_type
+        (named_type
+          (name))
+        (name)))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (primitive_type
+      (class_constant_type
+        (named_type
+          (name))
+        (name)))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (primitive_type
+      (integer)
+      (integer)
+      (integer))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (primitive_type
+      (class_constant_type
+        (named_type
+          (name))
+        (name)))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (primitive_type)
+    (variable_name
+      (name))))
+
+================================
+PHPStan types: Integer ranges
+================================
+/**
+ * @param int<0, max> $x
+ * @param int<min, 5> $x
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (primitive_type
+      (integer)
+      (named_type
+        (name)))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (primitive_type
+      (named_type
+        (name))
+      (integer))
+    (variable_name
+      (name))))
+
+================================
+PHPStan types: Literal types
+================================
+/**
+ * @param 'a'|'b' $x
+ * @param 1|2|3 $x
+ * @param 1.5 $x
+ * @param -1|0x1F $x
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (union_type
+      (string_literal)
+      (string_literal))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (union_type
+      (integer)
+      (integer)
+      (integer))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (float)
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (union_type
+      (integer)
+      (integer))
+    (variable_name
+      (name))))
+
+================================
+PHPStan types: Class constants
+================================
+/**
+ * @param Foo::BAR $x
+ * @param Foo::BAR_* $x
+ * @param self::* $x
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (class_constant_type
+      (named_type
+        (name))
+      (name))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (class_constant_type
+      (named_type
+        (name))
+      (name))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (class_constant_type
+      (named_type
+        (name))
+      (name))
+    (variable_name
+      (name))))
+
+================================
+PHPStan types: This, negated and conditional types
+================================
+/**
+ * @return $this
+ * @return $this|static
+ * @param !null $x
+ * @return ($mode is true ? A : B)
+ * @return (T is int ? A : B)
+ * @return T is not null ? A : B
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (this))
+  (tag
+    (tag_name)
+    (union_type
+      (this)
+      (named_type
+        (name))))
+  (tag
+    (tag_name)
+    (negated_type
+      (primitive_type))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (parenthesized_type
+      (conditional_type
+        (variable_name
+          (name))
+        (primitive_type)
+        (named_type
+          (name))
+        (named_type
+          (name)))))
+  (tag
+    (tag_name)
+    (parenthesized_type
+      (conditional_type
+        (named_type
+          (name))
+        (primitive_type)
+        (named_type
+          (name))
+        (named_type
+          (name)))))
+  (tag
+    (tag_name)
+    (named_type
+      (name))
+    (description
+      (text))))
+
+================================
+PHPStan types: Callable types
+================================
+/**
+ * @param callable(int): string $x
+ * @param callable(): void $x
+ * @param Closure(int, string): bool $x
+ * @param \Closure(int $a, string ...$b): void $x
+ * @param callable(int=): void $x
+ * @param callable(): array{a: int} $x
+ * @param callable(): list<int> $x
+ * @param pure-callable(int): int $x
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (callable_type
+      (named_type
+        (name))
+      (callable_parameter
+        (primitive_type))
+      (primitive_type))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (callable_type
+      (named_type
+        (name))
+      (primitive_type))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (callable_type
+      (named_type
+        (name))
+      (callable_parameter
+        (primitive_type))
+      (callable_parameter
+        (primitive_type))
+      (primitive_type))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (callable_type
+      (named_type
+        (qualified_name
+          (name)))
+      (callable_parameter
+        (primitive_type)
+        (variable_name
+          (name)))
+      (callable_parameter
+        (primitive_type)
+        (variable_name
+          (name)))
+      (primitive_type))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (callable_type
+      (named_type
+        (name))
+      (callable_parameter
+        (primitive_type))
+      (primitive_type))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (callable_type
+      (named_type
+        (name))
+      (array_type
+        (array_element
+          (name)
+          (primitive_type))))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (callable_type
+      (named_type
+        (name))
+      (array_type
+        (primitive_type)
+        (primitive_type)))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (callable_type
+      (primitive_type)
+      (callable_parameter
+        (primitive_type))
+      (primitive_type))
+    (variable_name
+      (name))))
+
+================================
+PHPStan types: Array shapes, open and nested
+================================
+/**
+ * @return array{a: int, ...}
+ * @return array{a: int, ...<string, mixed>}
+ * @return object{a: int}
+ * @return array{}
+ * @param array{a: int}[] $x
+ * @return ?array{a: int}
+ * @return array{a: array{b: int}, c: list<string>}
+ * @return array{'a-b': int}
+ * @param array{value: numeric-string} $data
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (array_type
+      (array_element
+        (name)
+        (primitive_type))
+      (array_rest)))
+  (tag
+    (tag_name)
+    (array_type
+      (array_element
+        (name)
+        (primitive_type))
+      (array_rest
+        (primitive_type)
+        (primitive_type))))
+  (tag
+    (tag_name)
+    (array_type
+      (array_element
+        (name)
+        (primitive_type))))
+  (tag
+    (tag_name)
+    (array_type))
+  (tag
+    (tag_name)
+    (array_type
+      (array_type
+        (array_element
+          (name)
+          (primitive_type))))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (optional_type
+      (array_type
+        (array_element
+          (name)
+          (primitive_type)))))
+  (tag
+    (tag_name)
+    (array_type
+      (array_element
+        (name)
+        (array_type
+          (array_element
+            (name)
+            (primitive_type))))
+      (array_element
+        (name)
+        (array_type
+          (primitive_type)
+          (primitive_type)))))
+  (tag
+    (tag_name)
+    (array_type
+      (array_element
+        (string_literal)
+        (primitive_type))))
+  (tag
+    (tag_name)
+    (array_type
+      (array_element
+        (name)
+        (primitive_type)))
+    (variable_name
+      (name))))

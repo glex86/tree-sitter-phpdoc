@@ -11,6 +11,16 @@ const PHP = require('tree-sitter-php/php/grammar').grammar;
 const PRIMITIVE_TYPES = [
   "array", "bool", "false", "float", "int", "iterable", "mixed", "null", "object", "string", "true", "void",
 ];
+// The types of Psalm and PHPStan that are written with a dash, so they are not names
+const PSALM_SCALAR_TYPES = [
+  'interface-string', 'positive-int', 'negative-int', 'non-negative-int', 'non-positive-int', 'non-zero-int',
+  'literal-int', 'trait-string', 'enum-string', 'callable-string', 'numeric-string', 'literal-string',
+  'lowercase-string', 'uppercase-string', 'non-empty-string', 'non-empty-lowercase-string',
+  'non-empty-uppercase-string', 'truthy-string', 'non-falsy-string', 'array-key', 'non-empty-array',
+  'non-empty-list', 'callable-array', 'callable-object', 'closed-resource', 'open-resource',
+  'key-of', 'value-of', 'int-mask', 'int-mask-of', 'properties-of', 'public-properties-of',
+  'protected-properties-of', 'private-properties-of', 'class-string-map', 'template-type',
+];
 const RESERVED = PRIMITIVE_TYPES.filter((w) => w !== "array");
 
 // PHPDoc reference: https://docs.phpdoc.org/3.0/guide/references/phpdoc/index.html
@@ -34,6 +44,15 @@ module.exports = grammar({
   ],
 
   conflicts: ($) => [
+    [$.callable_type],
+    [$._phpdoc_array_types],
+    [$._types, $._array_item_types],
+    [$._phpstan_atom_types, $._array_item_types],
+    [$.parenthesized_type, $.union_type],
+    [$._regular_types, $.optional_type],
+    [$.parenthesized_type, $.union_type, $.intersection_type],
+    [$._method_tag, $.named_type],
+    [$._psalm_scalar_type, $.primitive_type],
     [$.namespace_name],
     [$.named_type, $.generic_type],
     [$._type_argument_list],
@@ -657,8 +676,16 @@ module.exports = grammar({
     // @mixin [Type]
     _mixin_tag: ($) => seq(alias('@mixin', $.tag_name), $._type),
 
-    // PHP.rules.type creates an alias for $.type_list
-    _type: ($) => PHP.rules.type,
+    // PHP.rules.type is choice(_types, union_type, intersection_type, disjunctive_normal_form_type)
+    _type: ($) =>
+      choice(
+        $._types,
+        $.union_type,
+        $.intersection_type,
+        $.disjunctive_normal_form_type,
+        $.conditional_type,
+      ),
+
     // union_type uses _types, so we override it to be "regular" types (which
     // aren't grouped under a parent node) or array types (which are)
     _types: ($) =>
@@ -669,18 +696,116 @@ module.exports = grammar({
         alias($._psalm_generic_array_types, $.array_type),
         alias($._psalm_list_array_types, $.array_type),
         alias($._psalm_shaped_array_types, $.array_type),
+        $._phpstan_atom_types,
+        $.negated_type,
       ),
     _regular_types: ($) => PHP.rules._types,
-    _phpdoc_array_types: ($) => seq($._regular_types, repeat1('[]')),
+
+    // The types of PHPStan and Psalm that are neither PHP types nor arrays
+    _phpstan_atom_types: ($) =>
+      choice(
+        $.this,
+        alias($._integer_token, $.integer),
+        alias($._float_token, $.float),
+        alias($._string_token, $.string_literal),
+        $.class_constant_type,
+        $.callable_type,
+        $.parenthesized_type,
+      ),
+
+    // The types that can be followed by []
+    _array_item_types: ($) =>
+      choice(
+        $._regular_types,
+        alias($._psalm_generic_array_types, $.array_type),
+        alias($._psalm_list_array_types, $.array_type),
+        alias($._psalm_shaped_array_types, $.array_type),
+        $.this,
+        $.class_constant_type,
+        $.callable_type,
+        $.parenthesized_type,
+      ),
+
+    // $this
+    this: ($) => '$this',
+
+    // 1, -1, 0x1F, 0b11, 1_000
+    _integer_token: ($) => /-?(0[xX][0-9a-fA-F_]+|0[bB][01_]+|\d[\d_]*)/,
+    // 1.5, -.5, 1e3
+    _float_token: ($) =>
+      /-?(\d[\d_]*\.\d[\d_]*|\.\d[\d_]*)([eE][+-]?\d+)?|-?\d[\d_]*[eE][+-]?\d+/,
+    // 'a', "b": a literal type, or a key of an array shape
+    _string_token: ($) => /'[^'\r\n]*'|"[^"\r\n]*"/,
+
+    // Foo::BAR, Foo::BAR_*, Foo::*
+    class_constant_type: ($) =>
+      seq($.named_type, '::', alias($._constant_pattern, $.name)),
+    _constant_pattern: ($) =>
+      /([A-Za-z_¡-ÿ][A-Za-z_¡-ÿ\d]*)?\*?/,
+
+    // (A|B), ($a is B ? C : D)
+    parenthesized_type: ($) =>
+      seq('(', choice($.union_type, $.conditional_type, $._types), ')'),
+
+    // !null
+    negated_type: ($) => seq('!', $._types),
+
+    // $a is B ? C : D, T is not B ? C : D
+    conditional_type: ($) =>
+      prec.right(
+        seq(
+          field('subject', choice($.variable_name, $._types)),
+          'is',
+          optional('not'),
+          field('target', $._type),
+          '?',
+          field('then', $._type),
+          ':',
+          field('else', $._type),
+        ),
+      ),
+
+    // callable(int $a, string ...$b): void, Closure(int=): string, pure-callable(): int
+    callable_type: ($) =>
+      seq(
+        field(
+          'callee',
+          choice($.named_type, alias('pure-callable', $.primitive_type)),
+        ),
+        '(',
+        sep(alias($._callable_parameter, $.callable_parameter), ','),
+        ')',
+        optional(seq(':', field('return', $._types))),
+      ),
+
+    _callable_parameter: ($) =>
+      choice(
+        seq(
+          $._type,
+          optional($._parameter_modifier),
+          optional($.variable_name),
+          optional('='),
+        ),
+        seq($._parameter_modifier, optional($.variable_name), optional('=')),
+        seq($.variable_name, optional('=')),
+      ),
+
+    _parameter_modifier: ($) => choice('&', '...', '&...'),
+
+    _phpdoc_array_types: ($) => seq($._array_item_types, repeat1('[]')),
+
+    // Foo<K, V>, array<int|string, V>
     _psalm_generic_array_types: ($) =>
       seq(
         field('array', $._regular_types),
         '<',
-        field('key', $._types),
+        field('key', $._type),
         ',',
-        field('value', $._types),
+        field('value', $._type),
         '>',
       ),
+
+    // list<V>, Foo<A|B>
     _psalm_list_array_types: ($) =>
       seq(
         field(
@@ -688,19 +813,36 @@ module.exports = grammar({
           choice(alias('list', $.primitive_type), $._regular_types),
         ),
         '<',
-        field('value', $._types),
+        field('value', $._type),
         '>',
       ),
 
+    // array{a: int, b?: string, ...}, list{int, string}, object{a: int}
     _psalm_shaped_array_types: ($) =>
       prec(
         2,
         seq(
-          choice('array', 'list'),
+          choice('array', 'list', 'object'),
           '{',
-          sep1(alias($._shaped_array_element, $.array_element), ','),
+          optional(
+            choice(
+              seq(
+                sep1(alias($._shaped_array_element, $.array_element), ','),
+                optional(seq(',', $.array_rest)),
+                optional(','),
+              ),
+              $.array_rest,
+            ),
+          ),
           '}',
         ),
+      ),
+
+    // ... or ...<K, V>: the shape is not sealed
+    array_rest: ($) =>
+      seq(
+        '...',
+        optional(seq('<', $._type, optional(seq(',', $._type)), '>')),
       ),
 
     _shaped_array_element: ($) =>
@@ -711,37 +853,37 @@ module.exports = grammar({
             seq(
               choice(
                 $.name,
-                seq("'", $.name, "'"),
-                seq('"', $.name, '"'),
-                alias(/\d+/, $.name),
+                alias($._integer_token, $.name),
+                alias($._string_token, $.string_literal),
               ),
               optional('?'),
               ':',
             ),
           ),
         ),
-        field('value', $._regular_types),
+        field('value', $._type),
       ),
 
     _psalm_scalar_type: ($) =>
       choice(
         seq('class-string', optional($._type_argument_named_type)),
-        'interface-string',
-        'positive-int',
-        'trait-string',
-        'enum-string',
-        'callable-string',
-        'numeric-string',
-        'literal-string',
-        'lowercase-string',
-        'non-empty-string',
-        'non-empty-lowercase-string',
+        seq('int', $._type_argument_list),
+        seq(choice(...PSALM_SCALAR_TYPES), optional($._type_argument_list)),
       ),
 
-    generic_type: ($) => seq(PHP.rules.named_type, $._type_argument_list),
+    // Foo<A> and Foo<A, B> are array_types (see _psalm_list_array_types), this is for the rest of them
+    generic_type: ($) =>
+      prec.dynamic(-10, seq(PHP.rules.named_type, $._type_argument_list)),
 
     _type_argument_list: ($) =>
-      seq('<', choice(repeat(','), sep(',', $._type)), '>'),
+      seq('<', choice(repeat(','), sep($._type_argument, ',')), '>'),
+
+    _type_argument: ($) =>
+      choice(
+        $._type,
+        '*',
+        seq(choice('covariant', 'contravariant'), $._type),
+      ),
 
     _type_argument_named_type: ($) => seq('<', $.named_type, '>'),
 
@@ -749,7 +891,19 @@ module.exports = grammar({
     named_type: ($) => choice(PHP.rules.named_type, $.generic_type),
     namespace_name: ($) => PHP.rules.namespace_name,
     relative_name: ($) => PHP.rules.relative_name,
-    optional_type: ($) => PHP.rules.optional_type,
+    // ?int, ?(A|B), ?array{a: int}
+    optional_type: ($) =>
+      seq(
+        '?',
+        choice(
+          $.named_type,
+          $.primitive_type,
+          alias($._psalm_shaped_array_types, $.array_type),
+          alias($._psalm_generic_array_types, $.array_type),
+          alias($._psalm_list_array_types, $.array_type),
+          $.parenthesized_type,
+        ),
+      ),
     primitive_type: ($) => choice(...PRIMITIVE_TYPES),
     qualified_name: ($) => PHP.rules.qualified_name,
     union_type: ($) => PHP.rules.union_type,
