@@ -88,6 +88,9 @@ module.exports = grammar({
     //   '@package_version@'
     //   'git: $Id$'   (or any other form of 'name-of-vcs: $vector$')
     $._text_not_version,
+
+    // The text right after an inline tag, without a space: {@link Foo}.
+    $._text_after_inline,
   ],
 
   word: ($) => $.name,
@@ -98,17 +101,17 @@ module.exports = grammar({
 
     _begin: ($) => token(seq('/**', repeat('*'))),
 
-    description: ($) => repeat1(choice($.text, $.inline_tag)),
+    description: ($) => repeat1(choice($.text, $._inline_tag_run)),
 
     _description_after_type: ($) =>
       alias(
-        repeat1(choice(alias($._text_after_type, $.text), $.inline_tag)),
+        repeat1(choice(alias($._text_after_type, $.text), $._inline_tag_run)),
         $.description,
       ),
 
     _description_not_version: ($) =>
       alias(
-        repeat1(choice(alias($._text_not_version, $.text), $.inline_tag)),
+        repeat1(choice(alias($._text_not_version, $.text), $._inline_tag_run)),
         $.description,
       ),
 
@@ -117,7 +120,7 @@ module.exports = grammar({
 
     _description_in_inline_tag_with_nesting: ($) =>
       alias(
-        repeat1(choice(alias($._text_in_inline_tag, $.text), $.inline_tag)),
+        repeat1(choice(alias($._text_in_inline_tag, $.text), $._inline_tag_run)),
         $.description,
       ),
 
@@ -154,6 +157,10 @@ module.exports = grammar({
         $._psalm_tag,
         $._mixin_tag,
       ),
+
+    // An inline tag and the text that follows it without a space
+    _inline_tag_run: ($) =>
+      seq($.inline_tag, optional(alias($._text_after_inline, $.text))),
 
     inline_tag: ($) =>
       seq(
@@ -254,7 +261,7 @@ module.exports = grammar({
     _inline_link_tag: ($) =>
       seq(
         alias('@link', $.tag_name),
-        $.uri,
+        choice($.uri, $.fqsen),
         optional($._description_in_inline_tag),
       ),
 

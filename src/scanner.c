@@ -14,6 +14,7 @@ enum TokenType {
   TEXT_AFTER_TYPE,
   TEXT_IN_INLINE_TAG,
   TEXT_NOT_VERSION,
+  TEXT_AFTER_INLINE,
 };
 
 // Used as version string for some PEAR packages
@@ -39,6 +40,14 @@ static void skip(TSLexer *lexer) { lexer->advance(lexer, true); }
 //    ^ ... and will skip to here
 //
 // False is returned if other chars than [\n *] appear before '* '.
+//
+// On success the line prefix and the whitespace after it are skipped, so the lookahead is the first
+// character of the content. A line that has nothing but the prefix (' * ', with or without trailing
+// whitespace) is blank and is skipped as well, so a text can follow it:
+//
+//   * First paragraph.
+//   *                    <-- blank, maybe with a trailing space
+//   * Second paragraph.
 static bool skip_to_text_start(TSLexer *lexer) {
   bool asterisk_found = false;
   while (true) {
@@ -49,11 +58,17 @@ static bool skip_to_text_start(TSLexer *lexer) {
         asterisk_found = false;
         break;
       case ' ':
-        if (asterisk_found) {
-          // '* ' found: potential start of next content
-          return true;
-        }
+      case '\t':
         skip(lexer);
+        if (asterisk_found) {
+          // '* ' found: potential start of next content, unless the line ends here
+          while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+            skip(lexer);
+          }
+          if (lexer->lookahead != '\r' && lexer->lookahead != '\n') {
+            return true;
+          }
+        }
         break;
       case '*':
         skip(lexer);
@@ -267,7 +282,8 @@ bool tree_sitter_phpdoc_external_scanner_scan(void *payload, TSLexer *lexer,
       valid_symbols[TEXT] ||
       valid_symbols[TEXT_AFTER_TYPE] ||
       valid_symbols[TEXT_IN_INLINE_TAG] ||
-      valid_symbols[TEXT_NOT_VERSION]
+      valid_symbols[TEXT_NOT_VERSION] ||
+      valid_symbols[TEXT_AFTER_INLINE]
   ) {
 
     if (lexer->lookahead == '\n' || lexer->lookahead == '\r') {
@@ -275,13 +291,20 @@ bool tree_sitter_phpdoc_external_scanner_scan(void *payload, TSLexer *lexer,
         return false;
       }
       skipped_nl = true;
-    }
-
-    // node start must always have a preceding space
-    if (lexer->lookahead != ' ') {
+    } else if (lexer->lookahead == ' ') {
+      // node start must always have a preceding space
+      skip(lexer);
+    } else if (valid_symbols[TEXT_AFTER_INLINE]) {
+      // the text that follows an inline tag without a space: {@link Foo}.
+      if (scan_text(lexer, valid_symbols[TEXT_IN_INLINE_TAG], has_content)) {
+        lexer->result_symbol = TEXT_AFTER_INLINE;
+        LOG("  scanner detected:text_after_inline return:1\n");
+        return true;
+      }
+      return false;
+    } else {
       return false;
     }
-    skip(lexer);
 
     if (valid_symbols[TEXT] && scan_text(lexer, false, has_content)) {
       lexer->result_symbol = TEXT;

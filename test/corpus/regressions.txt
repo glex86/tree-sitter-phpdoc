@@ -1,0 +1,211 @@
+================================
+Paragraphs, blank line w/ trailing space
+================================
+/**
+ * First paragraph.
+ * 
+ * Second paragraph.
+ * 
+ * @return int
+ */
+---
+
+(document
+  (description
+    (text)
+    (text))
+  (tag
+    (tag_name)
+    (primitive_type)))
+
+================================
+Paragraphs, blank line w/o trailing space
+================================
+/**
+ * First paragraph.
+ *
+ * Second paragraph.
+ *
+ * Third paragraph.
+ */
+---
+
+(document
+  (description
+    (text)
+    (text)
+    (text)))
+
+================================
+Paragraphs w/ blank lines and indented lines
+================================
+/**
+ * One.
+ *   
+ *   indented continuation
+ * 
+ * @param int $x
+ */
+---
+
+(document
+  (description
+    (text)
+    (text))
+  (tag
+    (tag_name)
+    (primitive_type)
+    (variable_name
+      (name))))
+
+================================
+Indented tag after description
+================================
+/**
+ * Description.
+ *   @param int $x
+ */
+---
+
+(document
+  (description
+    (text))
+  (tag
+    (tag_name)
+    (primitive_type)
+    (variable_name
+      (name))))
+
+================================
+Inline tag followed by text without a space
+================================
+/**
+ * See {@link https://example.com}.
+ * @param int $x
+ */
+---
+
+(document
+  (description
+    (text)
+    (inline_tag
+      (tag_name)
+      (uri))
+    (text))
+  (tag
+    (tag_name)
+    (primitive_type)
+    (variable_name
+      (name))))
+
+================================
+Inline tag with a class name
+================================
+/**
+ * See {@link Foo} and {@see Bar::baz()}, or {@link Foo::$prop}.
+ * @param int $x
+ */
+---
+
+(document
+  (description
+    (text)
+    (inline_tag
+      (tag_name)
+      (fqsen
+        (named_type
+          (name))))
+    (text)
+    (inline_tag
+      (tag_name)
+      (fqsen
+        (named_type
+          (name))
+        (name)))
+    (text)
+    (inline_tag
+      (tag_name)
+      (fqsen
+        (named_type
+          (name))
+        (variable_name
+          (name))))
+    (text))
+  (tag
+    (tag_name)
+    (primitive_type)
+    (variable_name
+      (name))))
+
+================================
+Inline tags in a tag description
+================================
+/**
+ * @param int $x See {@link Foo}.
+ * @return int Same as {@see Foo::bar()}, or {@link https://example.com}.
+ * @throws \Exception If {@link Foo} fails.
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (primitive_type)
+    (variable_name
+      (name))
+    (description
+      (text)
+      (inline_tag
+        (tag_name)
+        (fqsen
+          (named_type
+            (name))))
+      (text)))
+  (tag
+    (tag_name)
+    (primitive_type)
+    (description
+      (text)
+      (inline_tag
+        (tag_name)
+        (fqsen
+          (named_type
+            (name))
+          (name)))
+      (text)
+      (inline_tag
+        (tag_name)
+        (uri))
+      (text)))
+  (tag
+    (tag_name)
+    (named_type
+      (qualified_name
+        (name)))
+    (description
+      (text)
+      (inline_tag
+        (tag_name)
+        (fqsen
+          (named_type
+            (name))))
+      (text))))
+
+================================
+Inheritdoc inline tag
+================================
+/**
+ * {@inheritdoc}
+ * @param int $x
+ */
+---
+
+(document
+  (description
+    (inline_tag
+      (tag_name)))
+  (tag
+    (tag_name)
+    (primitive_type)
+    (variable_name
+      (name))))

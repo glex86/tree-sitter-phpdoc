@@ -65,7 +65,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "inline_tag"
+            "name": "_inline_tag_run"
           }
         ]
       }
@@ -88,7 +88,7 @@
             },
             {
               "type": "SYMBOL",
-              "name": "inline_tag"
+              "name": "_inline_tag_run"
             }
           ]
         }
@@ -114,7 +114,7 @@
             },
             {
               "type": "SYMBOL",
-              "name": "inline_tag"
+              "name": "_inline_tag_run"
             }
           ]
         }
@@ -157,7 +157,7 @@
             },
             {
               "type": "SYMBOL",
-              "name": "inline_tag"
+              "name": "_inline_tag_run"
             }
           ]
         }
@@ -263,6 +263,32 @@
         {
           "type": "SYMBOL",
           "name": "_mixin_tag"
+        }
+      ]
+    },
+    "_inline_tag_run": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "inline_tag"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_text_after_inline"
+              },
+              "named": true,
+              "value": "text"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
         }
       ]
     },
@@ -591,8 +617,17 @@
           "value": "tag_name"
         },
         {
-          "type": "SYMBOL",
-          "name": "uri"
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "uri"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "fqsen"
+            }
+          ]
         },
         {
           "type": "CHOICE",
@@ -2889,6 +2924,10 @@
     {
       "type": "SYMBOL",
       "name": "_text_not_version"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_text_after_inline"
     }
   ],
   "inline": [],
