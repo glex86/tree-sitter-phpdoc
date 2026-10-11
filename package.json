@@ -1,6 +1,6 @@
 {
   "name": "tree-sitter-phpdoc",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "PHPDoc grammar for tree-sitter",
   "main": "bindings/node",
   "types": "bindings/node",
@@ -40,8 +40,8 @@
   "devDependencies": {
     "prebuildify": "^6.0.0",
     "prettier": "^3.3.3",
-    "tree-sitter-cli": "^0.25.10",
-    "tree-sitter-php": "^0.24.2"
+    "tree-sitter-cli": "^0.27.0",
+    "tree-sitter-php": "^0.25.0"
   },
   "dependencies": {
     "node-addon-api": "^7.1.0",

@@ -3,13 +3,13 @@
     {
       "name": "phpdoc",
       "camelcase": "PHPDoc",
-      "scope": "source.php",
-      "path": "php",
-      "file-types": ["php"]
+      "scope": "source.phpdoc",
+      "path": ".",
+      "file-types": []
     }
   ],
   "metadata": {
-    "version": "0.1.8",
+    "version": "0.2.0",
     "license": "MIT",
     "description": "PHPDoc grammar for tree-sitter",
     "authors": [
@@ -18,7 +18,7 @@
       }
     ],
     "links": {
-      "repository": "https://github.com/claytonrcarter/tree-sitter-phpdoc"
+      "repository": "https://github.com/glex86/tree-sitter-phpdoc"
     }
   },
   "bindings": {

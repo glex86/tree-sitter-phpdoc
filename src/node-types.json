@@ -192,6 +192,7 @@
   {
     "type": "document",
     "named": true,
+    "root": true,
     "fields": {},
     "children": {
       "multiple": true,
@@ -697,6 +698,10 @@
     "named": false
   },
   {
+    "type": "*/",
+    "named": false
+  },
+  {
     "type": ",",
     "named": false
   },
@@ -750,10 +755,6 @@
   },
   {
     "type": "bool",
-    "named": false
-  },
-  {
-    "type": "callable",
     "named": false
   },
   {
@@ -838,6 +839,10 @@
   },
   {
     "type": "numeric-string",
+    "named": false
+  },
+  {
+    "type": "object",
     "named": false
   },
   {

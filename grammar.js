@@ -1,14 +1,24 @@
 const PHP = require('tree-sitter-php/php/grammar').grammar;
 
+// tree-sitter-php >= 0.24 has reserved word sets (`reserved()`, used by PHP.rules.named_type and others), and
+// tree-sitter fails with "Reserved word 'abstract' must be a token" for every word of a set that is not a
+// token of this grammar. So the sets are cut down to the words of primitive_type below, which keep the PHP
+// behaviour: `int`, `null` or `false` are never a plain `name`.
+//
+// primitive_type is not PHP.rules.primitive_type: with its case-insensitive patterns (/false/i, /void/i, ...)
+// the lexer returns `name` for these words in this grammar, so they were named_types. String literals work,
+// but are case sensitive: `False` is a named_type. `callable` is a named_type too, as it always was here.
+const PRIMITIVE_TYPES = [
+  "array", "bool", "false", "float", "int", "iterable", "mixed", "null", "object", "string", "true", "void",
+];
+const RESERVED = PRIMITIVE_TYPES.filter((w) => w !== "array");
+
 // PHPDoc reference: https://docs.phpdoc.org/3.0/guide/references/phpdoc/index.html
 // PHPDoc tags: https://docs.phpdoc.org/3.0/guide/references/phpdoc/tags/index.html#tag-reference
 // PHPDoc docs appear to use these conventions
 //
 // TODO array return types https://docs.phpdoc.org/3.0/guide/references/phpdoc/types.html#arrays
 //   @verbatimElement [required element] [<optional element>]
-
-// console.error(JSON.stringify(PHP.reserved.classes[0]));
-// console.error(PHP.reserved.classes[0].value);
 
 module.exports = grammar({
   name: 'phpdoc',
@@ -38,8 +48,8 @@ module.exports = grammar({
 
   // copied to mimic the PHP grammar
   reserved: {
-    global: (_) => PHP.reserved.global.map((k) => new RegExp(k.value, 'i')),
-    classes: (_) => PHP.reserved.classes.map((k) => new RegExp(k.value, 'i')),
+    global: (_) => RESERVED,
+    classes: (_) => RESERVED,
     nothing: (_) => [],
   },
 
@@ -634,7 +644,7 @@ module.exports = grammar({
     namespace_name: ($) => PHP.rules.namespace_name,
     relative_name: ($) => PHP.rules.relative_name,
     optional_type: ($) => PHP.rules.optional_type,
-    primitive_type: ($) => PHP.rules.primitive_type,
+    primitive_type: ($) => choice(...PRIMITIVE_TYPES),
     qualified_name: ($) => PHP.rules.qualified_name,
     union_type: ($) => PHP.rules.union_type,
     intersection_type: ($) => PHP.rules.intersection_type,

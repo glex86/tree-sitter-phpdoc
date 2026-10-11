@@ -1,4 +1,5 @@
 {
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/grammar.schema.json",
   "name": "phpdoc",
   "word": "name",
   "rules": {
@@ -1480,13 +1481,8 @@
             {
               "type": "ALIAS",
               "content": {
-                "type": "CHOICE",
-                "members": [
-                  {
-                    "type": "STRING",
-                    "value": "@psalm-trace"
-                  }
-                ]
+                "type": "STRING",
+                "value": "@psalm-trace"
               },
               "named": true,
               "value": "tag_name"
@@ -1558,13 +1554,8 @@
               "name": "_type"
             },
             {
-              "type": "CHOICE",
-              "members": [
-                {
-                  "type": "SYMBOL",
-                  "name": "variable_name"
-                }
-              ]
+              "type": "SYMBOL",
+              "name": "variable_name"
             }
           ]
         },
@@ -2098,8 +2089,12 @@
           "type": "CHOICE",
           "members": [
             {
-              "type": "SYMBOL",
-              "name": "name"
+              "type": "RESERVED",
+              "content": {
+                "type": "SYMBOL",
+                "name": "name"
+              },
+              "context_name": "classes"
             },
             {
               "type": "SYMBOL",
@@ -2203,8 +2198,12 @@
           "type": "CHOICE",
           "members": [
             {
-              "type": "SYMBOL",
-              "name": "name"
+              "type": "RESERVED",
+              "content": {
+                "type": "SYMBOL",
+                "name": "name"
+              },
+              "context_name": "classes"
             },
             {
               "type": "SYMBOL",
@@ -2226,8 +2225,12 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "SYMBOL",
-          "name": "name"
+          "type": "RESERVED",
+          "content": {
+            "type": "SYMBOL",
+            "name": "name"
+          },
+          "context_name": "nothing"
         },
         {
           "type": "REPEAT",
@@ -2239,8 +2242,12 @@
                 "value": "\\"
               },
               {
-                "type": "SYMBOL",
-                "name": "name"
+                "type": "RESERVED",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "name"
+                },
+                "context_name": "nothing"
               }
             ]
           }
@@ -2295,8 +2302,12 @@
           }
         },
         {
-          "type": "SYMBOL",
-          "name": "name"
+          "type": "RESERVED",
+          "content": {
+            "type": "SYMBOL",
+            "name": "name"
+          },
+          "context_name": "classes"
         }
       ]
     },
@@ -2330,22 +2341,12 @@
           "value": "array"
         },
         {
-          "type": "ALIAS",
-          "content": {
-            "type": "PATTERN",
-            "value": "callable",
-            "flags": "i"
-          },
-          "named": false,
-          "value": "callable"
-        },
-        {
-          "type": "STRING",
-          "value": "iterable"
-        },
-        {
           "type": "STRING",
           "value": "bool"
+        },
+        {
+          "type": "STRING",
+          "value": "false"
         },
         {
           "type": "STRING",
@@ -2357,11 +2358,7 @@
         },
         {
           "type": "STRING",
-          "value": "string"
-        },
-        {
-          "type": "STRING",
-          "value": "void"
+          "value": "iterable"
         },
         {
           "type": "STRING",
@@ -2369,15 +2366,23 @@
         },
         {
           "type": "STRING",
-          "value": "false"
-        },
-        {
-          "type": "STRING",
           "value": "null"
         },
         {
           "type": "STRING",
+          "value": "object"
+        },
+        {
+          "type": "STRING",
+          "value": "string"
+        },
+        {
+          "type": "STRING",
           "value": "true"
+        },
+        {
+          "type": "STRING",
+          "value": "void"
         }
       ]
     },
@@ -2422,8 +2427,12 @@
           }
         },
         {
-          "type": "SYMBOL",
-          "name": "name"
+          "type": "RESERVED",
+          "content": {
+            "type": "SYMBOL",
+            "name": "name"
+          },
+          "context_name": "classes"
         }
       ]
     },
@@ -2561,8 +2570,12 @@
           "value": "$"
         },
         {
-          "type": "SYMBOL",
-          "name": "name"
+          "type": "RESERVED",
+          "content": {
+            "type": "SYMBOL",
+            "name": "name"
+          },
+          "context_name": "nothing"
         }
       ]
     },
@@ -2879,5 +2892,100 @@
     }
   ],
   "inline": [],
-  "supertypes": []
+  "supertypes": [],
+  "reserved": {
+    "global": [
+      {
+        "type": "STRING",
+        "value": "bool"
+      },
+      {
+        "type": "STRING",
+        "value": "false"
+      },
+      {
+        "type": "STRING",
+        "value": "float"
+      },
+      {
+        "type": "STRING",
+        "value": "int"
+      },
+      {
+        "type": "STRING",
+        "value": "iterable"
+      },
+      {
+        "type": "STRING",
+        "value": "mixed"
+      },
+      {
+        "type": "STRING",
+        "value": "null"
+      },
+      {
+        "type": "STRING",
+        "value": "object"
+      },
+      {
+        "type": "STRING",
+        "value": "string"
+      },
+      {
+        "type": "STRING",
+        "value": "true"
+      },
+      {
+        "type": "STRING",
+        "value": "void"
+      }
+    ],
+    "classes": [
+      {
+        "type": "STRING",
+        "value": "bool"
+      },
+      {
+        "type": "STRING",
+        "value": "false"
+      },
+      {
+        "type": "STRING",
+        "value": "float"
+      },
+      {
+        "type": "STRING",
+        "value": "int"
+      },
+      {
+        "type": "STRING",
+        "value": "iterable"
+      },
+      {
+        "type": "STRING",
+        "value": "mixed"
+      },
+      {
+        "type": "STRING",
+        "value": "null"
+      },
+      {
+        "type": "STRING",
+        "value": "object"
+      },
+      {
+        "type": "STRING",
+        "value": "string"
+      },
+      {
+        "type": "STRING",
+        "value": "true"
+      },
+      {
+        "type": "STRING",
+        "value": "void"
+      }
+    ],
+    "nothing": []
+  }
 }
