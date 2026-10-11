@@ -100,6 +100,17 @@ static bool scan_variable_name(TSLexer *lexer, bool *has_content) {
   if (skip_whitespace(lexer)) {
     *has_content = true;
   }
+  // by reference and variable number of arguments: &$x, ...$x, &...$x
+  if (lexer->lookahead == '&') {
+    advance(lexer);
+    *has_content = true;
+  }
+  if (lexer->lookahead == '.') {
+    for (int i = 0; i < 3 && lexer->lookahead == '.'; i++) {
+      advance(lexer);
+      *has_content = true;
+    }
+  }
   if (lexer->lookahead != '$') {
     return false;
   }

@@ -548,6 +548,10 @@
       "required": true,
       "types": [
         {
+          "type": "annotation_arguments",
+          "named": true
+        },
+        {
           "type": "array_type",
           "named": true
         },
@@ -682,6 +686,10 @@
     "named": false
   },
   {
+    "type": "&...",
+    "named": false
+  },
+  {
     "type": "'",
     "named": false
   },
@@ -703,6 +711,14 @@
   },
   {
     "type": ",",
+    "named": false
+  },
+  {
+    "type": ",...",
+    "named": false
+  },
+  {
+    "type": "...",
     "named": false
   },
   {
@@ -740,6 +756,10 @@
   {
     "type": "\\",
     "named": false
+  },
+  {
+    "type": "annotation_arguments",
+    "named": true
   },
   {
     "type": "array",

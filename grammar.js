@@ -44,6 +44,7 @@ module.exports = grammar({
       $.disjunctive_normal_form_type,
     ],
     [$.union_type, $.disjunctive_normal_form_type],
+    [$.intersection_type],
   ],
 
   // copied to mimic the PHP grammar
@@ -156,6 +157,9 @@ module.exports = grammar({
 
         $._psalm_tag,
         $._mixin_tag,
+
+        // Any other tag: unknown ones, annotations (@Route(...)), and the ones of tools
+        $._generic_tag,
       ),
 
     // An inline tag and the text that follows it without a space
@@ -180,9 +184,12 @@ module.exports = grammar({
     // @inheritdoc
     // @inheritDoc
     _tag_without_description: ($) =>
-      alias(
-        choice('@api', '@filesource', '@inheritdoc', '@inheritDoc'),
-        $.tag_name,
+      seq(
+        alias(
+          choice('@api', '@filesource', '@inheritdoc', '@inheritDoc'),
+          $.tag_name,
+        ),
+        optional($.description),
       ),
 
     // @ignore [<description>]
@@ -199,7 +206,7 @@ module.exports = grammar({
     _tag_with_required_description: ($) =>
       seq(
         alias(choice('@category', '@copyright', '@todo'), $.tag_name),
-        $.description,
+        optional($.description),
       ),
 
     // TODO complete implementation for these tags
@@ -239,14 +246,16 @@ module.exports = grammar({
     _author_tag: ($) =>
       seq(
         alias('@author', $.tag_name),
-        $.author_name,
-        optional(seq('<', $.email_address, '>')),
+        optional(seq($.author_name, optional(seq('<', $.email_address, '>')))),
       ),
 
     // @global [Type] [name] (name w/o $)
     // @global [Type] [description]
     _global_tag: ($) =>
-      seq(alias('@global', $.tag_name), $._type, $.variable_name),
+      seq(
+        alias('@global', $.tag_name),
+        optional(seq($._type, optional($.variable_name))),
+      ),
 
     // @internal [description]
     _inline_internal_tag: ($) =>
@@ -257,7 +266,10 @@ module.exports = grammar({
 
     // @link [URI] [<description>]
     _link_tag: ($) =>
-      seq(alias('@link', $.tag_name), $.uri, optional($.description)),
+      seq(
+        alias('@link', $.tag_name),
+        optional(seq($.uri, optional($.description))),
+      ),
     _inline_link_tag: ($) =>
       seq(
         alias('@link', $.tag_name),
@@ -269,22 +281,46 @@ module.exports = grammar({
     // @method [[static] return type] [name]([[type] [parameter]<, ...>]) [<description>]
     _method_tag: ($) =>
       seq(
-        alias('@method', $.tag_name),
-        // `[static]` is interpreted as optional despite not being in [<...>]
-        optional($.static),
-        optional($._type),
-        $.name,
-        $.parameters,
-        optional($.description),
+        alias(choice('@method', '@phpstan-method', '@psalm-method'), $.tag_name),
+        optional(
+          seq(
+            // `[static]` is interpreted as optional despite not being in [<...>]
+            optional($.static),
+            optional($._type),
+            $.name,
+            $.parameters,
+            optional($.description),
+          ),
+        ),
       ),
 
     // https://docs.phpdoc.org/3.0/guide/references/phpdoc/tags/param.html
     // @param [<Type>] [name] [<description>]
+    // @param [<Type>] [&][...][name] [<description>]
+    // @phpstan-param, @psalm-param
     _param_tag: ($) =>
       seq(
-        alias('@param', $.tag_name),
-        optional($._type),
+        alias(choice('@param', '@phpstan-param', '@psalm-param'), $.tag_name),
+        optional(
+          choice(
+            // @param int $x, @param int, @param int description
+            seq(
+              $._type,
+              optional(choice($._description_after_type, $._param_variable)),
+            ),
+            // @param $x
+            $._param_variable,
+          ),
+        ),
+      ),
+
+    // [&][...]$name[,...] [<description>]
+    _param_variable: ($) =>
+      seq(
+        optional(choice('&', '...', '&...')),
         $.variable_name,
+        // the old notation of a variable number of arguments: $args,...
+        optional(',...'),
         optional($.description),
       ),
 
@@ -293,21 +329,30 @@ module.exports = grammar({
     _property_tag: ($) =>
       seq(
         alias(
-          choice('@property', '@property-read', '@property-write'),
+          choice(
+            '@property',
+            '@property-read',
+            '@property-write',
+            '@phpstan-property',
+            '@phpstan-property-read',
+            '@phpstan-property-write',
+            '@psalm-property',
+            '@psalm-property-read',
+            '@psalm-property-write',
+          ),
           $.tag_name,
         ),
-        $._type,
-        $.variable_name,
-        optional($.description),
+        optional(
+          seq($._type, optional(seq($.variable_name, optional($.description)))),
+        ),
       ),
 
     // https://docs.phpdoc.org/3.0/guide/references/phpdoc/tags/return.html
     // @return [Type] [<description>]
     _return_tag: ($) =>
       seq(
-        alias('@return', $.tag_name),
-        $._type,
-        optional($._description_after_type),
+        alias(choice('@return', '@phpstan-return', '@psalm-return'), $.tag_name),
+        optional(seq($._type, optional($._description_after_type))),
       ),
 
     // https://docs.phpdoc.org/3.0/guide/references/phpdoc/tags/see.html
@@ -323,8 +368,7 @@ module.exports = grammar({
     _see_tag: ($) =>
       seq(
         alias('@see', $.tag_name),
-        choice($.uri, $.fqsen),
-        optional($.description),
+        optional(seq(choice($.uri, $.fqsen), optional($.description))),
       ),
     _inline_see_tag: ($) =>
       seq(
@@ -337,27 +381,34 @@ module.exports = grammar({
     _throws_tag: ($) =>
       seq(
         alias('@throws', $.tag_name),
-        $._type,
-        optional($._description_after_type),
+        optional(seq($._type, optional($._description_after_type))),
       ),
 
     // https://docs.phpdoc.org/3.0/guide/references/phpdoc/tags/var.html
     // @var ["Type"] [element_name] [<description>]
     _var_tag: ($) =>
       seq(
-        alias('@var', $.tag_name),
-        $._type,
-        // for psalm and phpstan, the var name is optional
+        alias(choice('@var', '@phpstan-var', '@psalm-var'), $.tag_name),
         optional(
           choice(
-            // @var int description
-            $._description_after_type,
+            seq(
+              $._type,
+              // for psalm and phpstan, the var name is optional
+              optional(
+                choice(
+                  // @var int description
+                  $._description_after_type,
 
-            // @var int $foo
-            $.variable_name,
+                  // @var int $foo
+                  $.variable_name,
 
-            // @var int $foo description
-            seq($.variable_name, $.description),
+                  // @var int $foo description
+                  seq($.variable_name, $.description),
+                ),
+              ),
+            ),
+            // @var $foo
+            seq($.variable_name, optional($.description)),
           ),
         ),
       ),
@@ -379,10 +430,12 @@ module.exports = grammar({
     _since_tag: ($) =>
       seq(
         alias('@since', $.tag_name),
-        choice(
-          $.version,
-          $._description_not_version,
-          seq($.version, $.description),
+        optional(
+          choice(
+            $.version,
+            $._description_not_version,
+            seq($.version, $.description),
+          ),
         ),
       ),
 
@@ -390,23 +443,44 @@ module.exports = grammar({
     _version_tag: ($) =>
       seq(
         alias('@version', $.tag_name),
-        choice(
-          $.version,
-          $._description_not_version,
-          seq($.version, $.description),
+        optional(
+          choice(
+            $.version,
+            $._description_not_version,
+            seq($.version, $.description),
+          ),
         ),
       ),
 
     // @template [Type] <of [Type]>
     // @psalm-template [Type] <of [Type]>
     // @phpstan-template [Type] <of [Type]>
+    // @template [Type] <of [Type]> <= [Type]>
+    // @template-covariant, @template-contravariant
     _generic_template_tag: ($) =>
       seq(
         alias(
-          choice('@template', '@psalm-template', '@phpstan-template'),
+          choice(
+            '@template',
+            '@template-covariant',
+            '@template-contravariant',
+            '@psalm-template',
+            '@psalm-template-covariant',
+            '@psalm-template-contravariant',
+            '@phpstan-template',
+            '@phpstan-template-covariant',
+            '@phpstan-template-contravariant',
+          ),
           $.tag_name,
         ),
-        choice($._type, seq($._type, 'of', $._type)),
+        optional(
+          seq(
+            $._type,
+            optional(seq('of', $._type)),
+            // the default of the template type
+            optional(seq('=', $._type)),
+          ),
+        ),
       ),
 
     // @implements [Type]
@@ -477,17 +551,11 @@ module.exports = grammar({
 
     _psalm_tag: ($) =>
       choice(
-        alias(
+        seq(
+          alias(
           choice(
             '@psalm-consistent-constructor',
             '@psalm-consistent-templates',
-            '@psalm-var',
-            '@psalm-param',
-            '@psalm-return',
-            '@psalm-property',
-            '@psalm-property-read',
-            '@psalm-property-write',
-            '@psalm-method',
             '@psalm-ignore-var',
             '@psalm-if-this-is',
             '@psalm-this-out',
@@ -502,17 +570,26 @@ module.exports = grammar({
             '@psalm-pure',
             '@psalm-allow-private-mutation',
             '@psalm-readonly-allow-private-mutation',
-            '@psalm-trace',
             '@no-named-arguments',
           ),
           $.tag_name,
+          ),
+          optional($.description),
         ),
         // @psalm-trace [name]
-        seq(alias('@psalm-trace', $.tag_name), $.variable_name),
+        seq(alias('@psalm-trace', $.tag_name), optional($.variable_name)),
         seq(
-          alias(choice('@param-out', '@psalm-param-out'), $.tag_name),
-          $._type,
-          $.variable_name,
+          alias(
+            choice('@param-out', '@psalm-param-out', '@phpstan-param-out'),
+            $.tag_name,
+          ),
+          optional(seq($._type, optional($.variable_name))),
+        ),
+        // @phpstan-type [name] = [Type]
+        // @psalm-type [name] = [Type]
+        seq(
+          alias(choice('@phpstan-type', '@psalm-type'), $.tag_name),
+          optional(seq($.name, optional('='), optional($._type))),
         ),
         // @psalm-asset[<-if-true|-if-false] [Type] [name|expression]
         seq(
@@ -521,16 +598,21 @@ module.exports = grammar({
               '@psalm-assert',
               '@psalm-assert-if-true',
               '@psalm-assert-if-false',
+              '@phpstan-assert',
+              '@phpstan-assert-if-true',
+              '@phpstan-assert-if-false',
             ),
             $.tag_name,
           ),
-          $._type,
-          $.variable_name,
+          optional(seq($._type, optional($.variable_name))),
           // TODO allow PHP expression
         ),
         //TODO implement @psalm-taint-* see https://psalm.dev/docs/security_analysis/annotations/
         seq(
-          alias('@psalm-import-type', $.tag_name),
+          alias(
+            choice('@psalm-import-type', '@phpstan-import-type'),
+            $.tag_name,
+          ),
           $.named_type,
           'from',
           $.named_type,
@@ -549,9 +631,26 @@ module.exports = grammar({
             ),
             $.tag_name,
           ),
-          $.named_type,
+          optional($.named_type),
         ),
       ),
+
+    // @anything [<arguments>] [<description>]
+    //
+    // The tags that are not known by this grammar: the ones of tools (@phpcs:ignore, @throws-nothing), of
+    // annotation libraries (@ORMColumn(...), @Route(...)), removed or invented ones. The name is as lenient as
+    // a name can be; a known tag is a string literal, which wins over this pattern when they match the same text.
+    _generic_tag: ($) =>
+      seq(
+        alias($._generic_tag_name, $.tag_name),
+        optional($.annotation_arguments),
+        optional($.description),
+      ),
+
+    _generic_tag_name: ($) => /@[a-zA-Z][a-zA-Z0-9_\\:-]*/,
+
+    // The arguments of an annotation, ( to the end of the line: they are not parsed
+    annotation_arguments: ($) => token(seq('(', /[^\r\n]*/)),
 
     // https://phpstan.org/writing-php-code/phpdocs-basics#mixins
     // https://psalm.dev/docs/annotating_code/supported_annotations/#mixins
@@ -700,6 +799,7 @@ module.exports = grammar({
     parameter: ($) =>
       seq(
         optional($._type),
+        optional(choice('&', '...', '&...')),
         $.variable_name,
         optional(seq('=', $.default_value)),
       ),

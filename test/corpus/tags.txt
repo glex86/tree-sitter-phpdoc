@@ -1,0 +1,322 @@
+================================
+Tolerant: param by reference and variadic
+================================
+/**
+ * @param int &$x
+ * @param int ...$y
+ * @param int &...$z Description
+ * @param mixed $args,... Description
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (primitive_type)
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (primitive_type)
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (primitive_type)
+    (variable_name
+      (name))
+    (description
+      (text)))
+  (tag
+    (tag_name)
+    (primitive_type)
+    (variable_name
+      (name))
+    (description
+      (text))))
+
+================================
+Tolerant: param w/o parts
+================================
+/**
+ * @param
+ * @param int
+ * @param $x Description
+ * @param string type the type
+ */
+---
+
+(document
+  (tag
+    (tag_name))
+  (tag
+    (tag_name)
+    (primitive_type))
+  (tag
+    (tag_name)
+    (variable_name
+      (name))
+    (description
+      (text)))
+  (tag
+    (tag_name)
+    (primitive_type)
+    (description
+      (text))))
+
+================================
+Tolerant: tags w/o argument
+================================
+/**
+ * @return
+ * @throws
+ * @var $x
+ * @since
+ * @version
+ * @author
+ * @link
+ * @see
+ * @global
+ * @api Description
+ */
+---
+
+(document
+  (tag
+    (tag_name))
+  (tag
+    (tag_name))
+  (tag
+    (tag_name)
+    (variable_name
+      (name)))
+  (tag
+    (tag_name))
+  (tag
+    (tag_name))
+  (tag
+    (tag_name))
+  (tag
+    (tag_name))
+  (tag
+    (tag_name))
+  (tag
+    (tag_name))
+  (tag
+    (tag_name)
+    (description
+      (text))))
+
+================================
+Tolerant: unknown tags
+================================
+/**
+ * @foo bar baz
+ * @removed 8.0
+ * @meta
+ * @throws-nothing
+ * @phpcs:ignore Foo.Bar
+ * @noinspection PhpUnused
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (description
+      (text)))
+  (tag
+    (tag_name)
+    (description
+      (text)))
+  (tag
+    (tag_name))
+  (tag
+    (tag_name))
+  (tag
+    (tag_name)
+    (description
+      (text)))
+  (tag
+    (tag_name)
+    (description
+      (text))))
+
+================================
+Tolerant: annotations
+================================
+/**
+ * @Route("/x", name="y")
+ * @ORM\Column(type="string", length=255)
+ * @ORM\Entity
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (annotation_arguments))
+  (tag
+    (tag_name)
+    (annotation_arguments))
+  (tag
+    (tag_name)))
+
+================================
+Tolerant: phpstan and psalm families
+================================
+/**
+ * @phpstan-param array<int> $x
+ * @phpstan-return list<int>
+ * @phpstan-var Foo $x
+ * @psalm-return list<int>
+ * @phpstan-property int $a
+ * @psalm-method Foo bar()
+ * @psalm-pure Description
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (array_type
+      (primitive_type)
+      (primitive_type))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (array_type
+      (primitive_type)
+      (primitive_type)))
+  (tag
+    (tag_name)
+    (named_type
+      (name))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (array_type
+      (primitive_type)
+      (primitive_type)))
+  (tag
+    (tag_name)
+    (primitive_type)
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (named_type
+      (name))
+    (name)
+    (parameters))
+  (tag
+    (tag_name)
+    (description
+      (text))))
+
+================================
+Tolerant: template variants
+================================
+/**
+ * @template T of Foo = Bar
+ * @template-covariant T
+ * @phpstan-template-contravariant T of X
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (named_type
+      (name))
+    (named_type
+      (name))
+    (named_type
+      (name)))
+  (tag
+    (tag_name)
+    (named_type
+      (name)))
+  (tag
+    (tag_name)
+    (named_type
+      (name))
+    (named_type
+      (name))))
+
+================================
+Tolerant: type aliases and assertions
+================================
+/**
+ * @phpstan-type Foo = array{a: int}
+ * @psalm-type Bar int|string
+ * @phpstan-assert Foo $x
+ * @phpstan-assert-if-true Foo $x
+ * @phpstan-import-type Foo from Bar as Baz
+ * @psalm-suppress
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (name)
+    (array_type
+      (array_element
+        (name)
+        (primitive_type))))
+  (tag
+    (tag_name)
+    (name)
+    (union_type
+      (primitive_type)
+      (primitive_type)))
+  (tag
+    (tag_name)
+    (named_type
+      (name))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (named_type
+      (name))
+    (variable_name
+      (name)))
+  (tag
+    (tag_name)
+    (named_type
+      (name))
+    (named_type
+      (name))
+    (named_type
+      (name)))
+  (tag
+    (tag_name)))
+
+================================
+Tolerant: method w/ variadic parameter
+================================
+/**
+ * @method static Foo create(int $a, string ...$b)
+ */
+---
+
+(document
+  (tag
+    (tag_name)
+    (static)
+    (named_type
+      (name))
+    (name)
+    (parameters
+      (parameter
+        (primitive_type)
+        (variable_name
+          (name)))
+      (parameter
+        (primitive_type)
+        (variable_name
+          (name))))))
